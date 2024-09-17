@@ -1,0 +1,30 @@
+﻿@code {
+    [Parameter]
+    public string SearchText { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnSearchChanged { get; set; }
+
+    private async Task OnSearchClick()
+    {
+        await OnSearchChanged.InvokeAsync(SearchText);
+    }
+}
+
+<div class="search-box">
+    <input @bind="SearchText" placeholder="Search..." class="form-control" />
+    <button @onclick="OnSearchClick" class="btn btn-primary">Search</button>
+</div>
+
+<style>
+    .search-box {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+        .search-box .form-control {
+            flex: 1;
+        }
+</style>

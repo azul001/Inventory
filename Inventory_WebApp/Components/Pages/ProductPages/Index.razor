@@ -1,0 +1,72 @@
+﻿@page "/products"
+@using Inventory_WebApp.Components
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using Inventory_WebApp.Models
+@using Inventory_WebApp.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<Inventory_WebApp.Data.InventoryDBContext> DbFactory
+
+<PageTitle>Products</PageTitle>
+
+<h1>Products</h1>
+
+<p>
+    <a href="products/create" class="btn btn-primary">Create New</a>
+</p>
+
+<!-- Search Input and Button -->
+<SearchBox SearchText="@searchText" OnSearchChanged="OnSearchChanged" />
+
+<!-- Display Products in a QuickGrid -->
+<QuickGrid Items="@FilteredProducts.AsQueryable()" Class="table">
+    <PropertyColumn Property="@(p => p.Id)" Title="ID" Sortable="true" />
+    <PropertyColumn Property="@(p => p.Name)" Title="Name" Sortable="true" />
+    <PropertyColumn Property="@(p => p.Price)" Title="Price" Sortable="true" />
+    <TemplateColumn Context="product">
+        <a href="@($"products/edit?id={product.Id}")" class="btn btn-dark">Edit</a> |
+        <a href="@($"products/details?id={product.Id}")" class="btn btn-success">Details</a> |
+        <a href="@($"products/delete?id={product.Id}")" class="btn btn-danger">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private InventoryDBContext context = default!;
+    private List<Product> products = new();
+    private string searchText = string.Empty;
+
+    private IEnumerable<Product> FilteredProducts => FilterProducts(products);
+
+    protected override async Task OnInitializedAsync()
+    {
+        context = DbFactory.CreateDbContext();
+        products = await context.Product.ToListAsync();
+        Console.WriteLine($"Products loaded: {products.Count}");
+    }
+
+    private IEnumerable<Product> FilterProducts(IEnumerable<Product> items)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            return items; // Return all if search text is empty
+        }
+
+        Console.WriteLine($"Filtering products with SearchText: {searchText}");
+
+        return items.Where(item => item.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task OnSearchChanged(string newSearchText)
+    {
+        searchText = newSearchText;
+        StateHasChanged(); // Trigger UI update
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (context != null)
+        {
+            await context.DisposeAsync();
+        }
+    }
+}
